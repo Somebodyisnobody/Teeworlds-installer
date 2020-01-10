@@ -2,28 +2,28 @@
 mode con: lines=30 cols=130
 Title Somebodyisnobody's Teeworlds installer
 :bof
-set "mode=checkadmin"
-set "Installerversion=1.0"
-rem checking for admin rights
+set "mode=nul"
 for /f "tokens=1,2*" %%s in ('bcdedit') do set STRING=%%s
 if (%STRING%)==(Zugriff) (
 	set "error=Please restart with administrator permissions"
 	goto fail
 )
+set "Installerversion=1.0"
 echo Installerversion: %Installerversion%
-echo Script written by Somebodyisnobody
-echo Github: https://github.com/Somebodyisnobody/Teeworlds-installer
+echo Script written by Somebodyisnobody	
+echo Github: https://github.com/Somebodyisnobody/Teeworlds-installer	
 echo Download the installation files at https://www.teeworlds.com
 if exist "%PROGRAMFILES(X86)%" (
 rem must be 64 bit OS
 	if exist "%PROGRAMFILES(X86)%\Teeworlds\*.version" (
-		goto Version_64_1
+		goto check32BitVersion
+	) else (
+		echo.
+		echo 32 bit version: Not installed
 	)
-	echo.
-	echo 32 bit version: Not installed
-	:Version_64_1_end
+	:checkIfExist64BitInstance
 	if exist "%PROGRAMFILES%\Teeworlds\*.version" (
-		goto Version_64_2
+		goto check64BitVersion
 	)
 	echo 64 bit version: Not installed
 	echo.
@@ -32,7 +32,7 @@ rem must be 64 bit OS
 		
 ) else if exist "%PROGRAMFILES%\Teeworlds\*.version" (
 rem must be 32 bit OS
-	goto Version_32_1
+	goto checkVersionOn32Bit
 )
 echo.
 echo 32 bit version: Not installed
@@ -40,28 +40,24 @@ echo.
 echo.
 goto Check_installed
 
-:Version_64_1
-set Version1-filter=
-For /f %%i in ('dir /B "%PROGRAMFILES(X86)%\Teeworlds\*.version"^|findstr "[0-9]\.[0-9]\.[0-9]"') do set "Version1-filter=%%i"
-for /f "tokens=1,2,3 delims=." %%a in ('echo %Version1-filter%') do set "Version1-filter2=Installed - %%a.%%b.%%c"
+:check32BitVersion
+set Version32Bit-filter=
+For /f %%i in ('dir /B "%PROGRAMFILES(X86)%\Teeworlds\*.version"^|findstr "[0-9]\.[0-9]\.[0-9]"') do set "Version32Bit-filter=%%i"
 echo.
-echo 32 bit version: %Version1-filter2%
-goto Version_64_1_end
-:Version_64_2
-set Version2-filter=
-For /f %%i in ('dir /B "%PROGRAMFILES%\Teeworlds\*.version"^|findstr "[0-9]\.[0-9]\.[0-9]"') do set "Version2-filter=%%i"
-for /f "tokens=1,2,3 delims=." %%a in ('echo %Version2-filter%') do set "Version2-filter2=Installed - %%a.%%b.%%c"
-echo 64 bit version: %Version2-filter2%
+echo 32 bit version: Installed - %Version32Bit-filter:.version=%
+goto checkIfExist64BitInstance
+:check64BitVersion
+set Version64Bit-filter=
+For /f %%i in ('dir /B "%PROGRAMFILES%\Teeworlds\*.version"^|findstr "[0-9]\.[0-9]\.[0-9]"') do set "Version64Bit-filter=%%i"
+echo 64 bit version: Installed - %Version64Bit-filter:.version=%
 echo.
 echo.
 goto Check_installed
-:Version_32_1
-set Version1-filter=
-set "Version1-filter2=Not definable"
-For /f %%i in ('dir /B "%PROGRAMFILES(X86)%\Teeworlds\*.version"^|findstr "[0-9]\.[0-9]\.[0-9]"') do set "Version1-filter=%%i"
-for /f "tokens=1,2,3 delims=." %%a in ('echo %Version1-filter%') do set "Version1-filter2=Installed - %%a.%%b.%%c"
+:checkVersionOn32Bit
+set Version32Bit-filter=
+For /f %%i in ('dir /B "%PROGRAMFILES(X86)%\Teeworlds\*.version"^|findstr "[0-9]\.[0-9]\.[0-9]"') do set "Version32Bit-filter=%%i"
 echo.
-echo 32 bit version: %Version1-filter2%
+echo 32 bit version: Installed - %Version32Bit-filter:.version=%
 echo.
 echo.
 goto Check_installed
@@ -70,12 +66,12 @@ goto Check_installed
 if not exist "%PROGRAMFILES(X86)%" (
 	rem must be 32 bit OS
 	if exist "%PROGRAMFILES%\Teeworlds" (
-		rem fully installed (64 bit impossible because no 64 bit OS)
+		rem fully installed
 		goto installed
 	)
-	rem not installed, goto q1 to install
+	rem not installed
 	goto q1
-rem so it must be 64 bit OS
+rem must be 64 bit OS
 ) else if exist "%PROGRAMFILES%\Teeworlds" (
 	if exist "%PROGRAMFILES(X86)%\Teeworlds" (
 		rem fully installed
@@ -91,7 +87,7 @@ rem so it must be 64 bit OS
 	set "unhalf=64"
 	goto halfinstalled
 )
-rem not installed, automatically goto q1 to install
+rem not installed
 
 rem Question install
 :q1
@@ -195,6 +191,9 @@ rem Change path to filename
 For /F %%i in ('dir /B "%Source%"') do set "Source-filter=%%~ni"
 rem compare the filename with regular expression
 for /f %%i in ('echo %Source-filter%^|findstr "teeworlds\-[0-9]\.[0-9]\.[0-9]\-win[64|32]"') do Set "Source-filter2=%%i"
+if not defined Source-filter2 (
+	for /f %%i in ('echo %Source-filter%^|findstr "teeworlds\-[0-9]\.[0-9]\.[0-9]\.[0-9]\-win[64|32]"') do Set "Source-filter2=%%i"
+)
 if not defined Source-filter2 (
 	cls
 	echo Invalid file! Use the original.
